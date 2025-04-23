@@ -20,10 +20,13 @@ jobs:
         dotnet-version: 9.0.x
 
     - name: Restore dependencies
-      run: dotnet restore ST10438308_PROG6221_Part1/CyberSecurityChatbot/CyberSecurityChatbot.csproj
+      run: dotnet restore CyberSecurityChatbot/CyberSecurityChatbot.csproj
 
     - name: Build
-      run: dotnet build ST10438308_PROG6221_Part1/CyberSecurityChatbot/CyberSecurityChatbot.csproj --configuration Release
+      run: dotnet build CyberSecurityChatbot/CyberSecurityChatbot.csproj --configuration Release
+      
+    - name: Run tests
+      run: dotnet test CyberSecurityChatbot/CyberSecurityChatbot.csproj
 
     - name: Run basic checks
       run: echo "Build completed for .NET 9!"
