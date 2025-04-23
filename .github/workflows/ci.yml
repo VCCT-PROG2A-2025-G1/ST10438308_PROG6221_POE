@@ -1,12 +1,10 @@
-name: .NET Core Build and Test
+name: .NET CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
@@ -16,16 +14,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: '9.0'
+        dotnet-version: '9.0' 
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore ST10438308_PROG6221_Part1/CyberSecurityChatbot/CyberSecurityChatbot.csproj
 
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build ST10438308_PROG6221_Part1/CyberSecurityChatbot/CyberSecurityChatbot.csproj --configuration Release
+
+    # Optional: Run tests if you have them
+    # - name: Test
+    #   run: dotnet test path/to/your/testproject.csproj
 
     - name: Run tests
       run: dotnet test --no-restore --verbosity normal
