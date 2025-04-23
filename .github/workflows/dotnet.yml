@@ -1,0 +1,29 @@
+name: .NET 9.0 CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore ST10438308_PROG6221_Part1/CyberSecurityChatbot/CyberSecurityChatbot.csproj
+
+    - name: Build
+      run: dotnet build ST10438308_PROG6221_Part1/CyberSecurityChatbot/CyberSecurityChatbot.csproj --configuration Release
+
+    - name: Run basic checks
+      run: echo "Build completed for .NET 9!"
