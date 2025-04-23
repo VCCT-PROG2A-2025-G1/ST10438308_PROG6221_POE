@@ -106,7 +106,7 @@ namespace CyberSecurityChatbot
 
             //Personalisation
             Console.ForegroundColor = ConsoleColor.Magenta;
-            PrintTyping($"Welcome, {name}!\n💻🔒Let's talk cybersecurity. ", ConsoleColor.Magenta,25);
+            PrintTyping($"Welcome, {name}!\n💻🔒Let's talk cybersecurity. How can I assist?", ConsoleColor.Magenta,25);
             Console.ResetColor();
 
             return name;
