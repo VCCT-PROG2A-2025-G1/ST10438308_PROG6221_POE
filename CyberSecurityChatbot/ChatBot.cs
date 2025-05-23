@@ -17,8 +17,11 @@ namespace CyberSecurityChatbot
 {
     public static class ChatBot
     {
+
         public static string AskUsername()
+
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8; //For symbols
             Console.ForegroundColor = ConsoleColor.White;
             ChatBotUI.PrintTyping("What is your name?", ConsoleColor.White, 30);
             string name = Console.ReadLine();
@@ -38,6 +41,7 @@ namespace CyberSecurityChatbot
 
         public static void StartConversation(string name)
         {
+            Topic currentTopic = Topic.None;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"\n💬You can ask me things like:" +
                 $"\n- How are you?" +
@@ -74,7 +78,9 @@ namespace CyberSecurityChatbot
                     break;
                 }
 
-                string response = ResponseGenerator.GetResponse(input, name);
+                var (response, topic) = ResponseGenerator.GetResponseWithTopic(input, currentTopic, name);
+                if (topic != Topic.None)
+                    currentTopic = topic;
 
                 int startLine = Console.CursorTop;
                 Console.ForegroundColor = ConsoleColor.DarkGray;
