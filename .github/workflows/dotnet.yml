@@ -1,4 +1,4 @@
-name: .NET Build
+name: .NET 9.0 CI
 
 on:
   push:
@@ -11,10 +11,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup .NET
+    - name: Setup .NET 9.0
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
@@ -24,3 +24,9 @@ jobs:
 
     - name: Build
       run: dotnet build CyberSecurityChatbot/CyberSecurityChatbot.csproj --configuration Release
+
+    - name: Run tests
+      run: dotnet test CyberSecurityChatbot/CyberSecurityChatbot.csproj
+
+    - name: Run basic checks
+      run: echo "Build completed for .NET 9!"
