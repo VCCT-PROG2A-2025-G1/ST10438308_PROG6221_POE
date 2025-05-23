@@ -24,6 +24,7 @@ namespace CyberSecurityChatbot
         private static Dictionary<string, int> interestTipIndex = new();
         private static HashSet<string> givenTipInterests = new();
 
+
         // This method initializes the chatbot and asks for the user's name
 
 
@@ -112,7 +113,8 @@ namespace CyberSecurityChatbot
                 $"\n- How do you work?" +
                 $"\n- What is phishing?" +
                 $"\n- What is a strong password?" +
-                $"\n- Tell me about yourself, your age, whether you're a student, professor or engineer and the 2 topics you're interested in!" +
+                $"\n- Tell me about yourself, your age, whether you're a student, professor or engineer and the 2 topics " +
+                $"\n you're interested in!" +
                 $"\n OR (Type 'exit' to quit.)");
             Console.ResetColor();
 
@@ -141,6 +143,12 @@ namespace CyberSecurityChatbot
                     break;
                 }
 
+                if (input.Contains("thank you") || input.Contains("thanks"))
+                {
+                    ChatBotUI.PrintTyping("CyberBot: You're welcome! 😊 Is there anything else you'd like to know?", ConsoleColor.Magenta, 30);
+                    continue;
+                }
+
                 // === New user memory parsing starts here ===
                 if (input.StartsWith("i'm ") || input.StartsWith("i am "))
                 {
@@ -153,6 +161,19 @@ namespace CyberSecurityChatbot
                 if (topic != Topic.None)
                     currentTopic = topic;
 
+                // Detect sentiment phrase
+                string sentiment = SentimentAnalyser.DetectSentiment(input);
+                string sentimentResponse = SentimentAnalyser.GetSentimentResponse(sentiment);
+                string combinedResponse = !string.IsNullOrEmpty(sentimentResponse) ? sentimentResponse + " " + response : response;
+
+                // Append tip if available
+                string? tip = GetRotatingTip(input);
+                if (tip != null)
+                {
+                    combinedResponse += "\n" + tip;
+                }
+
+                // Show typing animation before printing the full response
                 int startLine = Console.CursorTop;
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Write("CyberBot is typing");
@@ -166,16 +187,10 @@ namespace CyberSecurityChatbot
                 Console.Write(new string(' ', Console.WindowWidth));
                 Console.SetCursorPosition(0, startLine);
 
-                string? tip = GetRotatingTip(input);
-                if (tip != null)
-                {
-                    response += "\n" + tip;
-                }
-
+                // Print the combined response once
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine();
                 Console.Write("CyberBot: ");
-                ChatBotUI.PrintTyping(response, ConsoleColor.Magenta, 35);
+                ChatBotUI.PrintTyping(combinedResponse, ConsoleColor.Magenta, 35);
                 Console.ResetColor();
             }
         }
