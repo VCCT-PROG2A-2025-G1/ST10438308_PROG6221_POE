@@ -18,15 +18,21 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+        
+    - name: Debug folder structure
+      run: dir/s
 
     - name: Restore dependencies
-      run: dotnet restore CyberSecurityChatbot/CyberSecurityChatbot.csproj
+      run: dotnet restore CyberSecurityChatbot.csproj
+      working-directory: ST10438308_PROG6221_Part1/CyberSecurityChatbot
 
     - name: Build
-      run: dotnet build CyberSecurityChatbot/CyberSecurityChatbot.csproj --configuration Release
+      run: dotnet build CyberSecurityChatbot.csproj --configuration Release
+      working-directory: ST10438308_PROG6221_Part1/CyberSecurityChatbot
 
     - name: Run tests
-      run: dotnet test CyberSecurityChatbot/CyberSecurityChatbot.csproj
+      run: dotnet test CyberSecurityChatbot.csproj
+      working-directory: ST10438308_PROG6221_Part1/CyberSecurityChatbot
 
     - name: Run basic checks
       run: echo "Build completed for .NET 9!"
