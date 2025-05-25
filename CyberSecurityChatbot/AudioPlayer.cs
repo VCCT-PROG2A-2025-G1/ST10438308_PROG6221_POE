@@ -7,6 +7,8 @@ namespace CyberSecurityChatbot
 {
     public static class AudioPlayer
     {
+        //--------------------------------AUDIO PLAYER--------------------------------------//
+        // This method plays a greeting audio file asynchronously
         public static async Task PlayGreetingAudioAsync()
         {
             string audioFilePath = "chatbotgreetings.wav";
@@ -27,3 +29,4 @@ namespace CyberSecurityChatbot
         }
     }
 }
+//-----------------------------------------------------------------------------------------------END OF AUDIO PLAYER-------------------------------------------------------------------------//

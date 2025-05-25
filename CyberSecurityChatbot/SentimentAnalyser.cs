@@ -8,6 +8,7 @@ namespace CyberSecurityChatbot
 {
     class SentimentAnalyser
     {
+        //-----------------------------------DETETCT SENTIMENT METHOD-------------------------------------------//
         public static string DetectSentiment(String input)
         {
             input = input.ToLower();
@@ -20,7 +21,9 @@ namespace CyberSecurityChatbot
 
             return "";
         }
+        //---------------------------------------------------------------------------------------//
 
+        //-----------------------------------GET SENTIMENT RESPONSE METHOD-------------------------------------------//
         public static string GetSentimentResponse(string sentiment)
         {
             return sentiment switch
@@ -31,5 +34,7 @@ namespace CyberSecurityChatbot
                 _ => ""
             };
         }
+        //---------------------------------------------------------------------------------------//
     }
 }
+//----------------------------------------------------------------------------------------------END OF SENTIMENT ANALYSER-------------------------------------------------------------------------//

@@ -17,7 +17,8 @@ using CyberSecurityChatbot;
 
 namespace CyberSecurityChatbot
 {
-    //adding an enumeration for the topics 
+    //-----------------------------------TOPIC ENUMERATION -------------------------------//
+    // This enum defines the different topics the chatbot can discuss
     public enum Topic
     {
         None,
@@ -32,14 +33,21 @@ namespace CyberSecurityChatbot
         VPNs,
 
     }
+    //------------------------------------------------------------------//
 
+    //-----------------------------------RESPONSE GENERATOR CLASS -------------------------------//
     // This class generates responses based on user input
     public static class ResponseGenerator
     {
+        // Random instance for selecting tips
         private static Random random = new Random();
+
+
+        //-----------------------------------GET RESPONSE WITH TOPIC METHOD -------------------------------//
+        // This method generates a response based on the user's input and current topic
         public static (string response, Topic topic) GetResponseWithTopic(string input, Topic currentTopic, string name)
         {
-            input = input.ToLower();
+            input = input.ToLower(); // Normalize input to lowercase for easier matching
 
             // Check if user wants more details or explanations, then get a tip from TipLibrary if available
             if (input.Contains("more") || input.Contains("details") || input.Contains("explain"))
@@ -117,15 +125,20 @@ namespace CyberSecurityChatbot
 
             return ($"Sorry {name}, I don’t understand that yet. Try asking about:\n🔹 Phishing\n🔹 Malware\n🔹 Passwords\n🔹 Firewalls\n🔹 Scams\n🔹 Privacy\n🔹 Encryption\n🔹 2FA\n🔹 VPNs\n🔹 Phishing tips\n🔹 Password tips", Topic.None);
         }
+        //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
+        //-----------------------------------GET RANDOM TIP METHOD -------------------------------//
+        // This method retrieves a random tip from the TipLibrary based on the specified topic
         private static (string response, Topic topic) GetRandomTip(Topic topic)
         {
-            if (TipLibrary.TipsByTopic.TryGetValue(topic, out var tips))
+            if (TipLibrary.TipsByTopic.TryGetValue(topic, out var tips)) 
             {
                 string tip = tips[random.Next(tips.Length)];
                 return (tip, topic);
             }
             return ("Sorry, I don't have tips on that topic yet.", Topic.None);
         }
+        //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
     }
 }
+//------------------------------------------------------------------------------------------------END OF RESPONSE GENERATOR CLASS-------------------------------------------------------------------------//

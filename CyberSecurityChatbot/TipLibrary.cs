@@ -8,6 +8,8 @@ namespace CyberSecurityChatbot
 {
     public static class TipLibrary
     {
+      
+        // This dictionary maps topics to arrays of tips
         public static readonly Dictionary<Topic, string[]> TipsByTopic = new Dictionary<Topic, string[]>
         {
             { Topic.Phishing, new[] {
@@ -65,3 +67,4 @@ namespace CyberSecurityChatbot
     }
 
 }
+//-------------------------------------------------------------------------------------------END OF TIPLIBRARY CLASS------------------------------------------------------------------------------//
