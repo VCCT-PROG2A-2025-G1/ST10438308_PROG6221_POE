@@ -5,7 +5,7 @@ A C# console application designed to raise cybersecurity awareness among South A
 ---
 
 ## 📦 Project Structure
-ST10438308_PROG6221_Part1/
+ST10438308_PROG6221_POE/
 └── CyberSecurityChatbot/
 ├── CyberSecurityChatbot.csproj
 ├── Program.cs
