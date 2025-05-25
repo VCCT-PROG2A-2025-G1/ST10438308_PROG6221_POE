@@ -24,15 +24,15 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore CyberSecurityChatbot.csproj
-      working-directory: ST10438308_PROG6221_Part1/CyberSecurityChatbot
+      working-directory: ST10438308_PROG6221_POE/CyberSecurityChatbot
 
     - name: Build
       run: dotnet build CyberSecurityChatbot.csproj --configuration Release
-      working-directory: ST10438308_PROG6221_Part1/CyberSecurityChatbot
+      working-directory: ST10438308_PROG6221_POE/CyberSecurityChatbot
 
     - name: Run tests
       run: dotnet test CyberSecurityChatbot.csproj
-      working-directory: ST10438308_PROG6221_Part1/CyberSecurityChatbot
+      working-directory: ST10438308_PROG6221_POE/CyberSecurityChatbot
 
     - name: Run basic checks
       run: echo "Build completed for .NET 9!"
