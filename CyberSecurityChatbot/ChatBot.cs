@@ -67,33 +67,32 @@ namespace CyberSecurityChatbot
 
             foreach (string interest in user.Interests)
             {
-                // Only give tip if interest matches the current topic being discussed
-                if (givenTipInterests.Contains(interest) || interest != lastUserTopic)
+                // Skip if this interest was already given a tip or if it doesn't match the current topic
+                if (givenTipInterests.Contains(interest) || interest != lastUserTopic.ToString().ToLower())
                     continue;
 
+                // Initialize index if not present
                 if (!interestTipIndex.ContainsKey(interest))
                     interestTipIndex[interest] = 0;
 
-                string[] tips = interest switch
-                {
-                    "malware" => new[]
-                    {
-                "Keep your software updated to patch malware vulnerabilities.",
-                "Avoid pirated software—it’s a common malware source.",
-                "Regularly back up your files in case of ransomware attacks."
-            },
-                    "phishing" => new[]
-                    {
-                "Check the sender’s email address carefully—it might be spoofed.",
-                "Hover over links to preview URLs before clicking.",
-                "Enable two-factor authentication for extra protection."
-            },
-                    _ => new[] { $"Stay informed about {interest}—read trusted blogs and news sources." }
-                };
+                // Try to parse interest string to Topic enum if possible
+                bool isValidTopic = Enum.TryParse<Topic>(interest, true, out Topic topic);
 
+                if (!isValidTopic || !TipLibrary.TipsByTopic.ContainsKey(topic))
+                {
+                    // No tips available for this interest, skip to next
+                    continue;
+                }
+
+                string[] tips = TipLibrary.TipsByTopic[topic];
                 string tip = tips[interestTipIndex[interest]];
+
+                // Update index to next tip (rotate)
                 interestTipIndex[interest] = (interestTipIndex[interest] + 1) % tips.Length;
+
+                // Mark that we gave a tip for this interest this round
                 givenTipInterests.Add(interest);
+
                 return $"💡 As someone interested in {interest}, here's a tip: {tip}";
             }
 
@@ -158,7 +157,7 @@ namespace CyberSecurityChatbot
                 // === End user memory parsing ===
 
                 var (response, topic) = ResponseGenerator.GetResponseWithTopic(input, currentTopic, name);
-                
+
                 // If no response matched, use a fallback
                 if (string.IsNullOrWhiteSpace(response))
                 {
@@ -201,7 +200,6 @@ namespace CyberSecurityChatbot
                 Console.ResetColor();
             }
         }
-
         private static void ParseUserInfo(string input)
         {
             // Normalize input
@@ -243,6 +241,9 @@ namespace CyberSecurityChatbot
             ChatBotUI.PrintTyping($"CyberBot: Thanks for sharing about yourself, {user.Name}! " +
                 $"I noted your age as {user.Age ?? 0}, role as {user.Role ?? "unknown"}, " +
                 $"and interests in {interestString}.\n", ConsoleColor.Magenta, 30);
+            Console.ResetColor();
         }
     }
 }
+
+
