@@ -12,6 +12,7 @@ using System.Xml.Linq;
 using System.Media; // For WAV playback
 using NAudio.Wave;
 using System.Threading; //for type writer effect??
+using CyberSecurityChatbot;
 
 
 namespace CyberSecurityChatbot
@@ -35,110 +36,49 @@ namespace CyberSecurityChatbot
     // This class generates responses based on user input
     public static class ResponseGenerator
     {
-        private static Random random = new Random(); // Initialize Random once
-
-        // Array for phishing tips
-        private static string[] phishingTips = new string[]
-        {
-            "Always check the sender's email address. Scammers often use slightly altered addresses.",
-            "Hover over links before clicking to see the actual URL. If it looks suspicious, don't click!",
-            "Be wary of urgent or threatening language. Phishing emails often try to create a sense of panic.",
-            "Legitimate organizations will rarely ask for sensitive information like passwords or credit card numbers via email.",
-            "If an email seems suspicious, contact the organization directly using a known phone number or official website, not through the email itself."
-        };
-
-
-
-        // Array for password tips
-        private static string[] passwordTips = new string[]
-        {
-            "Use a unique password for every important account. Don't reuse passwords!",
-            "Aim for a password that is at least 12-16 characters long, combining letters, numbers, and symbols.",
-            "Consider using a passphrase – a series of unrelated words – which can be long and easy to remember.",
-            "Enable two-factor authentication (2FA) whenever possible for an extra layer of security.",
-            "Use a reputable password manager to securely store and generate complex passwords."
-        };
-
-        // 🛡️ Malware Tips – Source: Norton Security (https://us.norton.com/blog/malware)
-        private static string[] malwareTips = new string[]
-        {
-        "Avoid downloading files or software from untrusted sources.",
-        "Keep your operating system and antivirus software updated regularly.",
-        "Do not click on suspicious pop-ups or ads offering free services or prizes.",
-        "Use a reliable antivirus program and scan your device regularly.",
-        "Be cautious with email attachments, especially from unknown senders."
-        };
-
-        // 🔐 2FA Tips – Source: Google Safety Center (https://safety.google/authentication/)
-        private static string[] twoFATips = new string[]
-        {
-        "Use an authenticator app like Google Authenticator or Authy for stronger protection.",
-        "Avoid relying solely on SMS codes if possible; apps are more secure.",
-        "Enable 2FA on all accounts that support it, especially email and financial apps.",
-        "If given backup codes, store them in a safe place.",
-        "Use biometric options like fingerprint or face ID for extra security where available."
-        };
-
-        // 🌐 VPN Tips – Source: Kaspersky (https://www.kaspersky.com/resource-center/definitions/what-is-a-vpn)
-        private static string[] vpnTips = new string[]
-        {
-        "Use VPNs when connected to public Wi-Fi to prevent data snooping.",
-        "Choose a trusted VPN provider with a no-logs policy.",
-        "VPNs hide your IP and encrypt your internet traffic.",
-        "Using a VPN can help you access content restricted to other regions.",
-        "VPNs are essential for maintaining privacy on unsecured networks."
-        };
-
-        // 🕵️ Privacy Tips – Source: StaySafeOnline.org (https://staysafeonline.org)
-        private static string[] privacyTips = new string[]
-        {
-        "Limit the personal information you share online, especially on social media.",
-        "Review and update your app permissions regularly.",
-        "Disable location tracking when not in use.",
-        "Use privacy-focused browsers and search engines when possible.",
-        "Be mindful of oversharing personal details in public forums or posts."
-        };
-
+        private static Random random = new Random();
         public static (string response, Topic topic) GetResponseWithTopic(string input, Topic currentTopic, string name)
         {
             input = input.ToLower();
 
+            // Check if user wants more details or explanations, then get a tip from TipLibrary if available
             if (input.Contains("more") || input.Contains("details") || input.Contains("explain"))
             {
-                return currentTopic switch
+                if (TipLibrary.TipsByTopic.TryGetValue(currentTopic, out var tips))
                 {
-                    Topic.Phishing => (phishingTips[random.Next(phishingTips.Length)], Topic.Phishing),
-                    Topic.Passwords => (passwordTips[random.Next(passwordTips.Length)], Topic.Passwords),
-                    Topic.Malware => (malwareTips[random.Next(malwareTips.Length)], Topic.Malware),
-                    Topic.Encryption => ("There are two main types of encryption: symmetric and asymmetric. It's the foundation of secure communication.", Topic.Encryption),
-                    Topic.TwoFA => (twoFATips[random.Next(twoFATips.Length)], Topic.TwoFA),
-                    Topic.VPNs => (vpnTips[random.Next(vpnTips.Length)], Topic.VPNs),
-                    Topic.Privacy => (privacyTips[random.Next(privacyTips.Length)], Topic.Privacy),
-                    _ => ("Could you tell me what you'd like more details about?", Topic.None)
-                };
+                    string tip = tips[random.Next(tips.Length)];
+                    return (tip, currentTopic);
+                }
+                else if (currentTopic == Topic.Encryption)
+                {
+                    return ("There are two main types of encryption: symmetric and asymmetric. It's the foundation of secure communication.", Topic.Encryption);
+                }
+                else
+                {
+                    return ("Could you tell me what you'd like more details about?", Topic.None);
+                }
             }
 
-            // New tip triggers
+            // Specific tip requests
             if (input.Contains("phishing tip") || input.Contains("phishing advice"))
-                return (phishingTips[random.Next(phishingTips.Length)], Topic.Phishing);
+                return GetRandomTip(Topic.Phishing);
 
             if (input.Contains("password tip") || input.Contains("password advice"))
-                return (passwordTips[random.Next(passwordTips.Length)], Topic.Passwords);
+                return GetRandomTip(Topic.Passwords);
 
             if (input.Contains("malware tip") || input.Contains("malware advice"))
-                return (malwareTips[random.Next(malwareTips.Length)], Topic.Malware);
+                return GetRandomTip(Topic.Malware);
 
             if (input.Contains("2fa tip") || input.Contains("two-factor tip"))
-                return (twoFATips[random.Next(twoFATips.Length)], Topic.TwoFA);
+                return GetRandomTip(Topic.TwoFA);
 
             if (input.Contains("vpn tip") || input.Contains("vpn advice"))
-                return (vpnTips[random.Next(vpnTips.Length)], Topic.VPNs);
+                return GetRandomTip(Topic.VPNs);
 
             if (input.Contains("privacy tip") || input.Contains("privacy advice"))
-                return (privacyTips[random.Next(privacyTips.Length)], Topic.Privacy);
+                return GetRandomTip(Topic.Privacy);
 
-            //Keyword Triggers
-
+            // Keyword triggers for general explanations
             if (input.Contains("phishing"))
                 return ("Phishing is when attackers try to trick you into sharing sensitive info using fake emails or links.", Topic.Phishing);
 
@@ -176,6 +116,16 @@ namespace CyberSecurityChatbot
                 return ("I use simple keyword recognition to give you answers. I'm not AI, but I do try my best!", Topic.None);
 
             return ($"Sorry {name}, I don’t understand that yet. Try asking about:\n🔹 Phishing\n🔹 Malware\n🔹 Passwords\n🔹 Firewalls\n🔹 Scams\n🔹 Privacy\n🔹 Encryption\n🔹 2FA\n🔹 VPNs\n🔹 Phishing tips\n🔹 Password tips", Topic.None);
+        }
+
+        private static (string response, Topic topic) GetRandomTip(Topic topic)
+        {
+            if (TipLibrary.TipsByTopic.TryGetValue(topic, out var tips))
+            {
+                string tip = tips[random.Next(tips.Length)];
+                return (tip, topic);
+            }
+            return ("Sorry, I don't have tips on that topic yet.", Topic.None);
         }
     }
 }
