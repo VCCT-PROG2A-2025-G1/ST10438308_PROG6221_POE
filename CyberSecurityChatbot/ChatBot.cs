@@ -158,6 +158,13 @@ namespace CyberSecurityChatbot
                 // === End user memory parsing ===
 
                 var (response, topic) = ResponseGenerator.GetResponseWithTopic(input, currentTopic, name);
+                
+                // If no response matched, use a fallback
+                if (string.IsNullOrWhiteSpace(response))
+                {
+                    response = "I'm not sure I understand. Could you try rephrasing or asking in a different way?";
+                }
+
                 if (topic != Topic.None)
                     currentTopic = topic;
 
