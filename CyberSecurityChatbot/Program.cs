@@ -1,15 +1,4 @@
-﻿//Funi Mapunda
-//ST10438308
-//BCAD2 GR1
-
-//References: 
-//codecademy.com
-//stackoverflow.com
-//chatgpt.com
-
-
-
-using System;
+﻿using System;
 using System.Xml.Linq;
 using System.Media; // For WAV playback
 using NAudio.Wave;

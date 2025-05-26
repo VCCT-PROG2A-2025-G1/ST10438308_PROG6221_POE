@@ -49,14 +49,14 @@ namespace CyberSecurityChatbot
             //Error and input handling
             while (string.IsNullOrWhiteSpace(name))
             {
-                ChatBotUI.PrintTyping("Please enter a valid name:", ConsoleColor.Yellow, 25); 
+                ChatBotUI.PrintTyping("Please enter a valid name:", ConsoleColor.Yellow, 25);
                 name = Console.ReadLine();
             }
 
-            user.Name = name; 
+            user.Name = name;
 
             Console.ForegroundColor = ConsoleColor.Magenta;
-            ChatBotUI.PrintTyping($"Welcome, {name}!\n💻🔒Let's talk cybersecurity. How can I assist? ", ConsoleColor.Magenta, 25); 
+            ChatBotUI.PrintTyping($"Welcome, {name}!\n💻🔒Let's talk cybersecurity. How can I assist? ", ConsoleColor.Magenta, 25);
             Console.ResetColor();
 
             return name;
@@ -66,8 +66,8 @@ namespace CyberSecurityChatbot
         // This method generates a response based on user input and the current topic
         public static (string response, Topic topic) GetResponseWithTopic(string input, Topic currentTopic, string name)
         {
-           
-            var (response, topic) = ResponseGenerator.GetResponseWithTopic(input, currentTopic, name); 
+
+            var (response, topic) = ResponseGenerator.GetResponseWithTopic(input, currentTopic, name);
             if (topic != Topic.None) lastUserTopic = topic.ToString().ToLower();
             return (response, topic);
         }
@@ -122,7 +122,7 @@ namespace CyberSecurityChatbot
         // This method starts the conversation with the user
         public static void StartConversation(string name)
         {
-       
+
             Topic currentTopic = Topic.None; // Initialize the current topic to None
             Console.ForegroundColor = ConsoleColor.Yellow;
 
@@ -231,45 +231,52 @@ namespace CyberSecurityChatbot
             // Normalize input
             input = input.ToLower();
 
-            // Extract age - look for pattern like "21 year old" or "21 yrs old"
+            bool updated = false; // Flag to check if we got new info
+
+            // Extract age
             var ageMatch = Regex.Match(input, @"(\d{1,3})\s*(year|yr)s?\s*old");
             if (ageMatch.Success && int.TryParse(ageMatch.Groups[1].Value, out int age))
             {
-                user.Age = age;
+                if (!user.Age.HasValue)
+                {
+                    user.Age = age;
+                    updated = true;
+                }
             }
 
-            // Extract role/student status
-            if (input.Contains("student")) user.Role = "student";
-            else if (input.Contains("teacher")) user.Role = "teacher";
-            else if (input.Contains("engineer")) user.Role = "engineer";
+            // Extract role
+            if (input.Contains("student") && user.Role != "student") { user.Role = "student"; updated = true; }
+            else if (input.Contains("teacher") && user.Role != "teacher") { user.Role = "teacher"; updated = true; }
+            else if (input.Contains("engineer") && user.Role != "engineer") { user.Role = "engineer"; updated = true; }
 
-            // Extract interests - look for "interested in" or "learning about"
-            var interests = new List<string>();
-
-            // First, try to find "interested in X" or "learning about X"
+            // Extract interests
             var interestedMatch = Regex.Match(input, @"(?:interested in|learning about)\s+([a-z\s,]+)");
             if (interestedMatch.Success)
             {
                 string interestsText = interestedMatch.Groups[1].Value;
-                // Split by commas or "and"
                 var splitInterests = interestsText.Split(new string[] { ",", " and " }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var interest in splitInterests)
                 {
                     string trimmed = interest.Trim();
-                    if (!string.IsNullOrEmpty(trimmed))
+                    if (!string.IsNullOrEmpty(trimmed) && !user.Interests.Contains(trimmed))
+                    {
                         user.AddInterest(trimmed);
+                        updated = true;
+                    }
                 }
             }
 
-            // Confirmation message
-            var ageText = user.Age.HasValue ? user.Age.Value.ToString() : "unknown";
-            var interestString = user.Interests.Count > 0 ? string.Join(", ", user.Interests) : "no specific interests";
-            ChatBotUI.PrintTyping($"CyberBot: Thanks for sharing about yourself, {user.Name}! " +
-                $"I noted your age as {user.Age ?? 0}, role as {user.Role ?? "unknown"}, " +
-                $"and interests in {interestString}.\n", ConsoleColor.Magenta, 30);
-            Console.ResetColor();
+            // Only print message if something was actually updated
+            if (updated)
+            {
+                var ageText = user.Age.HasValue ? user.Age.Value.ToString() : "unknown";
+                var interestString = user.Interests.Count > 0 ? string.Join(", ", user.Interests) : "no specific interests";
+                ChatBotUI.PrintTyping($"CyberBot: Thanks for sharing about yourself, {user.Name}! " +
+                    $"I noted your age as {user.Age ?? 0}, role as {user.Role ?? "unknown"}, " +
+                    $"and interests in {interestString}.\n", ConsoleColor.Magenta, 30);
+                Console.ResetColor();
+            }
         }
-        //----------------------------------------------------------------------------------------------------------------//
     }
 }
 //-----------------------------------------------------------END OF PROGRAM--------------------------------------------------------------------------//
