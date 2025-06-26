@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CyberSecurityChatbot
 {
-    class UserProfile
+    public class UserProfile
     {
         //name, age, role, and interests of the user
         public string Name { get; set; }

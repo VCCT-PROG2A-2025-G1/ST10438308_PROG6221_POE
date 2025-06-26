@@ -1,115 +1,183 @@
-﻿using System.Text;
+﻿using CyberSecurityChatbot;
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace CyberSecurityChatBotWPF
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        private List<CyberTask> userTasks = new List<CyberTask>();
-        private BotService bot = new BotService(); // uses your chatbot logic
+        // Your chatbot's memory and tools
+        private static UserProfile user = new UserProfile();
+        private static Random random = new Random();
+        private static string lastUserTopic = "";
+        private static Dictionary<string, int> interestTipIndex = new();
+        private static HashSet<string> givenTipInterests = new();
+
+        private Topic currentTopic = Topic.None;
+
+        private TaskWindow taskWindow;
+
+        private CyberTask lastAddedTask = null;
+
+        private void OpenQuiz_Click(object sender, RoutedEventArgs e)
+        {
+            QuizWindow quizWindow = new QuizWindow();
+            quizWindow.Show();
+        }
+
+        private void OpenTaskManager_Click(object sender, RoutedEventArgs e)
+        {
+            if (taskWindow == null) taskWindow = new TaskWindow();
+            taskWindow.Show();
+            BotSay("Task manager opened.");
+        }
+
+        private void OpenQuiz_Click(object sender, RoutedEventArgs e)
+        {
+            if (quizWindow == null) quizWindow = new QuizWindow();
+            quizWindow.Show();
+            BotSay("Quiz started! Answer the questions to test your cybersecurity knowledge.");
+        }
 
         public MainWindow()
         {
             InitializeComponent();
+            BotSay("Hello! 👋 Welcome to the Cybersecurity ChatBot.");
+            BotSay("What is your name?");
         }
 
-        // 🔘 Chatbot message processing
-        private void Send_Click(object sender, RoutedEventArgs e)
+        private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-            string input = UserInput.Text.Trim();
-            string response = bot.ProcessInput(input);
+            string input = UserInputTextBox.Text.Trim();
+            UserInputTextBox.Clear();
 
-            // 🚨 Check if the response is a task signal
-            if (response.StartsWith("##ADD_TASK##"))
-            {
-                string[] parts = response.Replace("##ADD_TASK##", "").Split('|');
-                string title = parts[0].Trim();
-                string description = parts.Length > 1 ? parts[1].Trim() : "Cybersecurity task.";
-
-                var task = new CyberTask
-                {
-                    Title = title,
-                    Description = description
-                };
-
-                userTasks.Add(task);
-                TaskList.Items.Add(task);
-
-                ChatOutput.Text += $"\nYou: {input}\nCyberBot: Task \"{title}\" added with description \"{description}\". Would you like to set a reminder?\n";
-            }
-            else
-            {
-                ChatOutput.Text += $"\nYou: {input}\nCyberBot: {response}\n";
-            }
-
-            UserInput.Clear();
-        }
-
-        // ✅ Add Task
-        private void AddTask_Click(object sender, RoutedEventArgs e)
-        {
-            var task = new CyberTask
-            {
-                Title = TaskTitleBox.Text,
-                Description = TaskDescriptionBox.Text,
-                ReminderDate = TaskReminderPicker.SelectedDate
-            };
-
-            if (string.IsNullOrWhiteSpace(task.Title) || string.IsNullOrWhiteSpace(task.Description))
-            {
-                MessageBox.Show("Please provide both title and description.");
+            if (string.IsNullOrWhiteSpace(input))
                 return;
+
+            ChatHistoryTextBlock.Text += $"You: {input}\n";
+
+            // Add Task Command
+            if (input.ToLower().StartsWith("add task"))
+            {
+                string taskTitle = input.Substring(8).Trim();
+                if (string.IsNullOrWhiteSpace(taskTitle))
+                {
+                    BotSay("Sure! What would you like the task to be?");
+                    return;  // <-- Return here!
+                }
+
+                if (taskWindow == null)
+                    taskWindow = new TaskWindow();
+
+                taskWindow.Show();
+
+                taskWindow.TitleBox.Text = taskTitle;
+
+                lastAddedTask = new CyberTask { Title = taskTitle };
+                taskWindow.Tasks.Add(lastAddedTask);
+                taskWindow.RefreshList();
+
+                BotSay($"Task added with title \"{taskTitle}\". You can add more details or a reminder in the task window, or tell me to remind you in X days.");
+                return;  // <-- Return here!
             }
 
-            userTasks.Add(task);
-            TaskList.Items.Add(task);
+            // Remind me in X days
+            var remindMatch = Regex.Match(input.ToLower(), @"remind me in (\d+) days");
+            if (remindMatch.Success && lastAddedTask != null)
+            {
+                if (int.TryParse(remindMatch.Groups[1].Value, out int days))
+                {
+                    lastAddedTask.ReminderDate = DateTime.Today.AddDays(days);
+                    taskWindow?.RefreshList();
 
-            ChatOutput.Text += $"\nCyberBot: Task \"{task.Title}\" added. " +
-                               (task.ReminderDate.HasValue ? $"I'll remind you on {task.ReminderDate.Value:MMM dd, yyyy}." : "") + "\n";
+                    BotSay($"Got it! I'll remind you about \"{lastAddedTask.Title}\" in {days} days.");
+                    return;  // <-- Return here!
+                }
+            }
 
-            TaskTitleBox.Clear();
-            TaskDescriptionBox.Clear();
-            TaskReminderPicker.SelectedDate = null;
+            // Default fallback (only reached if no other conditions matched)
+            BotSay("Sorry, I don't understand that yet. Try asking about:\nPhishing\nMalware\nPasswords\nFirewalls\nScams\nPrivacy\nEncryption\n2FA\nVPNs\no Phishing tips\n· Password tips");
         }
 
-        // ❌ Delete Task
-        private void DeleteTask_Click(object sender, RoutedEventArgs e)
+        private void AppendUser(string message)
         {
-            if (TaskList.SelectedItem is CyberTask selectedTask)
-            {
-                userTasks.Remove(selectedTask);
-                TaskList.Items.Remove(selectedTask);
-                ChatOutput.Text += $"\nCyberBot: Task \"{selectedTask.Title}\" has been deleted.\n";
-            }
-            else
-            {
-                MessageBox.Show("Please select a task to delete.");
-            }
+            ChatHistoryTextBlock.Text += $"You: {message}\n";
         }
 
-        // ✔ Mark as Completed
-        private void CompleteTask_Click(object sender, RoutedEventArgs e)
+        private void BotSay(string message)
         {
-            if (TaskList.SelectedItem is CyberTask selectedTask)
+            ChatHistoryTextBlock.Text += $"CyberBot: {message}\n\n";
+        }
+
+        private static string GetRotatingTip(string input)
+        {
+            input = input.ToLower();
+
+            foreach (string interest in user.Interests)
             {
-                selectedTask.IsCompleted = true;
-                TaskList.Items.Refresh(); // Refresh ListBox display
-                ChatOutput.Text += $"\nCyberBot: Task \"{selectedTask.Title}\" marked as completed. ✅\n";
+                if (givenTipInterests.Contains(interest) || interest != lastUserTopic.ToLower())
+                    continue;
+
+                if (!interestTipIndex.ContainsKey(interest))
+                    interestTipIndex[interest] = 0;
+
+                if (!Enum.TryParse<Topic>(interest, true, out Topic topic)) continue;
+                if (!TipLibrary.TipsByTopic.ContainsKey(topic)) continue;
+
+                var tips = TipLibrary.TipsByTopic[topic];
+                string tip = tips[interestTipIndex[interest]];
+
+                interestTipIndex[interest] = (interestTipIndex[interest] + 1) % tips.Length;
+                givenTipInterests.Add(interest);
+
+                return $"As someone interested in {interest}, here's a tip: {tip}";
             }
-            else
+
+            return null;
+        }
+
+        private static void ParseUserInfo(string input)
+        {
+            input = input.ToLower();
+            bool updated = false;
+
+            var ageMatch = System.Text.RegularExpressions.Regex.Match(input, @"(\d{1,3})\s*(year|yr)s?\s*old");
+            if (ageMatch.Success && int.TryParse(ageMatch.Groups[1].Value, out int age))
             {
-                MessageBox.Show("Please select a task to mark as completed.");
+                if (!user.Age.HasValue)
+                {
+                    user.Age = age;
+                    updated = true;
+                }
+            }
+
+            if (input.Contains("student")) { user.Role = "student"; updated = true; }
+            else if (input.Contains("engineer")) { user.Role = "engineer"; updated = true; }
+            else if (input.Contains("teacher") || input.Contains("professor")) { user.Role = "teacher"; updated = true; }
+
+            var interestMatch = System.Text.RegularExpressions.Regex.Match(input, @"(?:interested in|learning about)\s+([a-z\s,]+)");
+            if (interestMatch.Success)
+            {
+                string[] interests = interestMatch.Groups[1].Value.Split(new[] { ",", " and " }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var interest in interests)
+                {
+                    string clean = interest.Trim();
+                    if (!user.Interests.Contains(clean))
+                    {
+                        user.AddInterest(clean);
+                        updated = true;
+                    }
+                }
+            }
+
+            if (updated)
+            {
+                string summary = $"Got it! Age: {user.Age ?? 0}, Role: {user.Role}, Interests: {string.Join(", ", user.Interests)}.";
+                // In console this would be styled — here just show text
+                MessageBox.Show(summary, "User Info Updated", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }
