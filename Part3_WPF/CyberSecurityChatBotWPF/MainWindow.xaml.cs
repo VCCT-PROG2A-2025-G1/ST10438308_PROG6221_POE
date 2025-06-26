@@ -1,4 +1,7 @@
 ﻿using CyberSecurityChatbot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 
@@ -6,6 +9,14 @@ namespace CyberSecurityChatBotWPF
 {
     public partial class MainWindow : Window
     {
+        // Activity log entry struct
+        private struct ActivityLogEntry
+        {
+            public DateTime Timestamp;
+            public string Description;
+            public string Category; // e.g. "Task", "Reminder", "Quiz", "NLP", "Topic"
+        }
+
         // Chatbot memory and tools
         private static UserProfile user = new UserProfile();
         private static Random random = new Random();
@@ -19,48 +30,123 @@ namespace CyberSecurityChatBotWPF
         private TaskWindow taskWindow;
         private CyberTask lastAddedTask = null;
 
-        private void AppendUser(string message)
-        {
-            ChatHistoryTextBlock.Text += $"You: {message}\n";
-        }
+        // Activity log related fields
+        private List<ActivityLogEntry> activityLog = new();
+        private int logDisplayCount = 5; // Show 5 entries by default
+        private string lastDetectedTopicOrKeyword = "None";
 
         public MainWindow()
         {
             InitializeComponent();
             BotSay("Hello! 👋 Welcome to the Cybersecurity ChatBot.");
-            BotSay("What is your name?");
+            
         }
 
+        // Append user message to chat history display
+        private void AppendUser(string message)
+        {
+            ChatHistoryTextBlock.Text += $"You: {message}\n";
+        }
+
+        // Bot message output helper
+        private void BotSay(string message)
+        {
+            ChatHistoryTextBlock.Text += $"CyberBot: {message}\n\n";
+        }
+
+        // Add an entry to the activity log
+        private void AddToActivityLog(string description, string category = "General")
+        {
+            activityLog.Add(new ActivityLogEntry
+            {
+                Timestamp = DateTime.Now,
+                Description = description,
+                Category = category
+            });
+
+            if (activityLog.Count > 100)
+                activityLog.RemoveAt(0); // keep max 100 entries
+        }
+
+        // Update and log last conversation topic or keyword
+        private void UpdateLastTopicOrKeyword(string topic)
+        {
+            lastDetectedTopicOrKeyword = topic;
+            AddToActivityLog($"Detected conversation topic/keyword: {topic}", "Topic");
+        }
+
+        // Display activity log entries with pagination
+        private void ShowActivityLog(int countToShow)
+        {
+            if (activityLog.Count == 0)
+            {
+                BotSay("Activity log is empty.");
+                return;
+            }
+
+            int startIndex = Math.Max(activityLog.Count - countToShow, 0);
+            var entriesToShow = activityLog.Skip(startIndex).Take(countToShow).ToList();
+
+            string logMessage = $"Showing last {entriesToShow.Count} actions (out of {activityLog.Count}):\n" +
+                string.Join("\n", entriesToShow.Select((entry, i) =>
+                    $"{startIndex + i + 1}. [{entry.Timestamp:G}] [{entry.Category}] {entry.Description}"));
+
+            BotSay(logMessage);
+
+            if (activityLog.Count > countToShow)
+            {
+                BotSay("Type 'show more log' to see more entries.");
+            }
+        }
+
+        // User intents
         private enum UserIntent
         {
             AddTask,
             SetReminder,
             StartQuiz,
-            ShowHistory,
+            ShowActivityLog,
             Unknown
         }
 
+        // Detect user intent with extended keyword detection, including activity log commands
         private (UserIntent intent, string extractedText, int? days) DetectUserIntent(string input)
         {
-            input = input.ToLower();
+            input = input.ToLower().Trim();
+
+            // Show more log pagination
+            if (input.Contains("show more log") || input.Contains("more activity log"))
+                return (UserIntent.ShowActivityLog, "more", null);
+
+            // Show activity log commands
+            if (input.Contains("show activity log") || input.Contains("activity log") || input.Contains("show log") || input.Contains("what have you done"))
+                return (UserIntent.ShowActivityLog, "", null);
 
             // Add Task
             if (input.Contains("add task") || input.Contains("create task") || input.Contains("note to") || input.Contains("add a task to"))
             {
                 var match = Regex.Match(input, @"(?:add|create|note)\s+(?:a\s+)?task\s+(?:to\s+)?(.+)");
-                return (UserIntent.AddTask, match.Success ? match.Groups[1].Value : "", null);
+                return (UserIntent.AddTask, match.Success ? match.Groups[1].Value.Trim() : "", null);
             }
 
-            // Set Reminder
+            // Set Reminder - Improved regex and logic to extract task and days more reliably
             if (input.Contains("remind me") || input.Contains("set a reminder"))
             {
-                var match = Regex.Match(input, @"(?:remind me|set a reminder)\s+(?:to\s+)?(.+?)\s*(?:in\s+(\d+)\s+days)?");
+                // Pattern to extract "remind me to <task> (tomorrow|today|in X days)"
+                var pattern = @"remind me(?: to)? (?<task>.+?)(?: (tomorrow|today|in (\d+) days))?$";
+                var match = Regex.Match(input, pattern);
+
                 if (match.Success)
                 {
-                    string taskText = match.Groups[1].Value.Trim();
+                    string taskText = match.Groups["task"].Value.Trim();
                     int? days = null;
-                    if (int.TryParse(match.Groups[2].Value, out int d))
-                        days = d;
+
+                    if (input.EndsWith("tomorrow"))
+                        days = 1;
+                    else if (input.EndsWith("today"))
+                        days = 0;
+                    else if (int.TryParse(match.Groups[3].Value, out int parsedDays))
+                        days = parsedDays;
 
                     return (UserIntent.SetReminder, taskText, days);
                 }
@@ -68,22 +154,12 @@ namespace CyberSecurityChatBotWPF
 
             // Quiz Start
             if (input.Contains("start quiz") || input.Contains("quiz me") || input.Contains("take quiz"))
-            {
                 return (UserIntent.StartQuiz, "", null);
-            }
-
-            // Summary / History
-            if (input.Contains("what have you done") || input.Contains("show my actions") || input.Contains("summary"))
-            {
-                return (UserIntent.ShowHistory, "", null);
-            }
 
             return (UserIntent.Unknown, "", null);
         }
 
-        // Main chat handler
-        private List<string> actionHistory = new();
-
+        // Main chat message handler
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
             string input = UserInputTextBox.Text.Trim();
@@ -92,6 +168,7 @@ namespace CyberSecurityChatBotWPF
             if (string.IsNullOrWhiteSpace(input)) return;
 
             AppendUser(input);
+
             var (intent, text, days) = DetectUserIntent(input);
 
             switch (intent)
@@ -111,7 +188,8 @@ namespace CyberSecurityChatBotWPF
                     taskWindow.RefreshList();
 
                     BotSay($"Task added: \"{text}\". Would you like to set a reminder for this task?");
-                    actionHistory.Add($"Task added: \"{text}\" (no reminder set)");
+                    AddToActivityLog($"Task added: \"{text}\"", "Task");
+                    UpdateLastTopicOrKeyword("Task");
                     break;
 
                 case UserIntent.SetReminder:
@@ -127,33 +205,37 @@ namespace CyberSecurityChatBotWPF
                     {
                         task.ReminderDate = DateTime.Today.AddDays(days.Value);
                         BotSay($"Reminder set for \"{text}\" in {days.Value} days.");
-                        actionHistory.Add($"Reminder set for \"{text}\" in {days.Value} days");
+                        AddToActivityLog($"Reminder set for \"{text}\" in {days.Value} days", "Reminder");
                     }
                     else
                     {
                         BotSay($"Task added: \"{text}\". You can open the task manager to set a specific reminder.");
-                        actionHistory.Add($"Task added: \"{text}\" (no reminder set)");
+                        AddToActivityLog($"Reminder added for \"{text}\" (no specific date)", "Reminder");
                     }
 
                     if (taskWindow == null) taskWindow = new TaskWindow();
                     taskWindow.Tasks.Add(task);
                     taskWindow.RefreshList();
+
+                    UpdateLastTopicOrKeyword("Reminder");
                     break;
 
                 case UserIntent.StartQuiz:
+                    AddToActivityLog("Quiz started", "Quiz");
+                    UpdateLastTopicOrKeyword("Quiz");
                     OpenQuiz_Click(sender, e);
-                    actionHistory.Add("Quiz started");
                     break;
 
-                case UserIntent.ShowHistory:
-                    if (actionHistory.Count == 0)
+                case UserIntent.ShowActivityLog:
+                    if (text == "more")
                     {
-                        BotSay("I haven’t done anything for you yet.");
+                        logDisplayCount += 5; // Increase displayed logs by 5 on each 'show more' command
+                        ShowActivityLog(logDisplayCount);
                     }
                     else
                     {
-                        BotSay("Here’s a summary of recent actions:\n" +
-                            string.Join("\n", actionHistory.Select((a, i) => $"{i + 1}. {a}")));
+                        logDisplayCount = 5; // Reset to default
+                        ShowActivityLog(logDisplayCount);
                     }
                     break;
 
@@ -163,14 +245,17 @@ namespace CyberSecurityChatBotWPF
             }
         }
 
-        // Open Task Window
+        // Open Task Manager window
         private void OpenTaskManager_Click(object sender, RoutedEventArgs e)
         {
             if (taskWindow == null)
+            {
                 taskWindow = new TaskWindow();
+                taskWindow.Closed += (s, args) => taskWindow = null;
+            }
 
             taskWindow.Show();
-            BotSay("Task manager opened.");
+            taskWindow.Activate();
         }
 
         // Open Quiz Window
@@ -180,13 +265,7 @@ namespace CyberSecurityChatBotWPF
             quizWindow.Show();
         }
 
-        // Bot response
-        private void BotSay(string message)
-        {
-            ChatHistoryTextBlock.Text += $"CyberBot: {message}\n\n";
-        }
-
-        // Tip generator
+        // Tip generator (unchanged)
         private static string GetRotatingTip(string input)
         {
             input = input.ToLower();
@@ -214,7 +293,7 @@ namespace CyberSecurityChatBotWPF
             return null;
         }
 
-        // User input parser
+        // User info parser (unchanged)
         private static void ParseUserInfo(string input)
         {
             input = input.ToLower();
