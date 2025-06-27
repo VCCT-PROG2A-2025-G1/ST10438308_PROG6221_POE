@@ -8,11 +8,13 @@ namespace CyberSecurityChatBotWPF
 {
     public partial class MainWindow : Window
     {
+        public static MainWindow Instance { get; private set; }
         private TaskWindow taskWindow;
         private CyberTask lastAddedTask;
-        private List<string> activityLog = new();
-        private int activityPage = 0;
-        private const int LogPageSize = 5;
+
+        private List<string> activityLog = new List<string>();
+        private int activityLogPage = 0;
+        private const int ActivityLogPageSize = 5;
 
 
 
@@ -23,6 +25,9 @@ namespace CyberSecurityChatBotWPF
 
             // Subscribe to quiz event
             QuizWindow.QuizCompleted += OnQuizCompleted;
+
+            InitializeComponent();
+            Instance = this; // ✅ Set the static reference here
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
@@ -51,12 +56,12 @@ namespace CyberSecurityChatBotWPF
                     break;
 
                 case UserIntent.ShowLog:
-                    activityPage = 0;
+                    activityLogPage = 0;
                     ShowActivityLog();
                     break;
 
                 case UserIntent.ShowMoreLog:
-                    activityPage++;
+                    activityLogPage++;
                     ShowActivityLog();
                     break;
 
@@ -164,26 +169,42 @@ namespace CyberSecurityChatBotWPF
 
         private void ShowActivityLog()
         {
-            var slice = activityLog.Skip(activityPage * LogPageSize).Take(LogPageSize).ToList();
+            if (activityLog.Count == 0)
+            {
+                BotSay("Activity log is empty.");
+                return;
+            }
 
-            if (slice.Count == 0)
+            // Calculate which slice of log entries to show
+            int skip = activityLogPage * ActivityLogPageSize;
+            var pageEntries = activityLog.Skip(skip).Take(ActivityLogPageSize).ToList();
+
+            if (pageEntries.Count == 0)
             {
                 BotSay("No more activity log entries.");
                 return;
             }
 
-            string message = $"Showing {slice.Count} of {activityLog.Count} actions:\n" +
-                             string.Join("\n", slice.Select((entry, i) => $"{i + 1 + activityPage * LogPageSize}. {entry}"));
+            string message = $"Showing activity log entries {skip + 1} to {skip + pageEntries.Count} out of {activityLog.Count}:\n";
+            message += string.Join("\n", pageEntries.Select((entry, idx) => $"{skip + idx + 1}. {entry}"));
 
             BotSay(message);
 
-            if ((activityPage + 1) * LogPageSize < activityLog.Count)
-                BotSay("Type 'show more log' to view additional entries.");
+            // Suggest "show more" if more entries exist
+            if (skip + ActivityLogPageSize < activityLog.Count)
+                BotSay("Type 'show more log' to see more entries.");
         }
 
-        private void LogActivity(string entry)
+        public void LogActivity(string actionDescription)
         {
-            activityLog.Add($"[{DateTime.Now:yyyy/MM/dd HH:mm:ss}] {entry}");
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            activityLog.Add($"[{timestamp}] {actionDescription}");
+        }
+
+        private void ShowMoreActivityLog()
+        {
+            activityLogPage++;
+            ShowActivityLog();
         }
 
         private void BotSay(string message)
@@ -262,6 +283,19 @@ namespace CyberSecurityChatBotWPF
             {
                 int d = int.Parse(yesRemind.Groups[1].Value);
                 return (UserIntent.SetReminder, "", d);
+            }
+
+            if (input.Contains("show activity log") || input.Contains("what have you done"))
+            {
+                activityLogPage = 0; // Reset paging
+                ShowActivityLog();
+                return (UserIntent.Unknown, "", null);
+            }
+
+            if (input.Contains("show more log") || input.Contains("more log"))
+            {
+                ShowMoreActivityLog();
+                return (UserIntent.Unknown, "", null);
             }
 
             return (UserIntent.Unknown, "", null);
