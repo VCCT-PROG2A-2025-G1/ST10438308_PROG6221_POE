@@ -2,6 +2,7 @@
 
 namespace CyberSecurityChatBotWPF
 {
+    //class representing a cyber security task
     public class CyberTask
     {
         public string Title { get; set; }
@@ -16,3 +17,4 @@ namespace CyberSecurityChatBotWPF
         }
     }
 }
+//-----------------------------END OF FILE-----------------------------//

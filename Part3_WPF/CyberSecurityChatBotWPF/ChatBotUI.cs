@@ -12,11 +12,7 @@ namespace CyberSecurityChatbot
         {
             foreach (char c in text)
             {
-                // Append character to last message or create new TextBlock item
-                // For simplicity, let's just add full messages at once here
-                // You can extend it to type char by char if you want
-
-                // Wait to simulate typing
+                
                 await Task.Delay(delayMs);
             }
 
@@ -30,3 +26,4 @@ namespace CyberSecurityChatbot
         }
     }
 }
+//-------------------------------END OF FILE----------------------//

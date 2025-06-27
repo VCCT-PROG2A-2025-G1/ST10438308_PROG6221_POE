@@ -7,14 +7,17 @@ namespace CyberSecurityChatBotWPF
 {
     public partial class TaskWindow : Window
     {
+        // List to hold tasks
         public List<CyberTask> Tasks { get; set; } = new();
 
+        //--------------------CONSTRUCTOR--------------------//
         public TaskWindow()
         {
             InitializeComponent();
             RefreshList();
         }
 
+        //--------------------EVENT HANDLERS--------------------//
         private void AddTask_Click(object sender, RoutedEventArgs e)
         {
             var task = new CyberTask
@@ -37,6 +40,8 @@ namespace CyberSecurityChatBotWPF
             ReminderPicker.SelectedDate = null;
         }
 
+        //--------------------METHODS--------------------//
+        // Refresh the task list display
         public void RefreshList()
         {
             TaskList.Items.Clear();
@@ -46,6 +51,7 @@ namespace CyberSecurityChatBotWPF
             }
         }
 
+        // Mark the selected task as complete
         private void MarkComplete_Click(object sender, RoutedEventArgs e)
         {
             int index = TaskList.SelectedIndex;
@@ -56,6 +62,7 @@ namespace CyberSecurityChatBotWPF
             }
         }
 
+        // Delete the selected task from the list
         private void DeleteTask_Click(object sender, RoutedEventArgs e)
         {
             int index = TaskList.SelectedIndex;
@@ -66,6 +73,7 @@ namespace CyberSecurityChatBotWPF
             }
         }
 
+        // Check for reminders for today's tasks
         private void CheckReminders_Click(object sender, RoutedEventArgs e)
         {
             var today = DateTime.Today;
@@ -87,3 +95,4 @@ namespace CyberSecurityChatBotWPF
         }
     }
 }
+//------------------------------------------------------------END OF FILE-----------------------------------------------------//

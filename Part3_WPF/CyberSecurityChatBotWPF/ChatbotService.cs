@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using CyberSecurityChatbot; // Your existing namespaces
+using CyberSecurityChatbot; 
 
 namespace CyberSecurityChatBotWPF
 {
+    //Using the logic from part 1 and part 2, this class handles the chatbot's functionality
     public class ChatbotService
     {
         private UserProfile user = new UserProfile();
@@ -70,6 +71,7 @@ namespace CyberSecurityChatBotWPF
             return response;
         }
 
+        // Parses user information from input and updates the user profile
         private string ParseUserInfo(string input)
         {
             bool updated = false;
@@ -117,6 +119,7 @@ namespace CyberSecurityChatBotWPF
             return "Thanks for sharing!";
         }
 
+        // Retrieves a rotating tip based on user interests, avoiding repetition
         private string GetRotatingTip(string input)
         {
             input = input.ToLower();
@@ -147,3 +150,4 @@ namespace CyberSecurityChatBotWPF
         }
     }
 }
+//------------------------------------------------END OF FILE-----------------------------------------------------//

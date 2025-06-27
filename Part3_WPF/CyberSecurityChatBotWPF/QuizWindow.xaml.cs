@@ -8,6 +8,8 @@ using System.Windows.Threading;
 
 namespace CyberSecurityChatBotWPF
 {
+
+    // -----------------------------------Event arguments for quiz completion-------------------------//
     public class QuizCompletedEventArgs : EventArgs
     {
         public int Score { get; }
@@ -15,6 +17,7 @@ namespace CyberSecurityChatBotWPF
         public double Percentage => TotalQuestions > 0 ? (double)Score / TotalQuestions * 100 : 0;
         public List<string> QuestionsAnswered { get; }
 
+        
         public QuizCompletedEventArgs(int score, int totalQuestions, List<string> questionsAnswered)
         {
             Score = score;
@@ -23,6 +26,7 @@ namespace CyberSecurityChatBotWPF
         }
     }
 
+    
     public partial class QuizWindow : Window
     {
         private List<QuizQuestion> Questions = new();
@@ -177,10 +181,9 @@ namespace CyberSecurityChatBotWPF
             string correctText = question.Options[question.CorrectAnswerIndex];
             string log = $"❌ Incorrect: \"{question.QuestionText}\" | You chose: \"{selectedText}\" | Correct: \"{correctText}\"";
 
-            // Optionally show in console or a separate UI element
             Console.WriteLine(log);
 
-            // Optionally save to a central log if you have one
+            
             if (MainWindow.Instance != null)
             {
                 MainWindow.Instance.LogActivity("[Quiz] " + log);
@@ -239,7 +242,7 @@ namespace CyberSecurityChatBotWPF
             }
             else
             {
-                DisplayQuestion(); // This won't reprint feedback since we’re done
+                DisplayQuestion(); 
             }
         }
 
@@ -252,3 +255,4 @@ namespace CyberSecurityChatBotWPF
         }
     }
 }
+//----------------------------------------------------END OF PROGRAM----------------------------------------------------//

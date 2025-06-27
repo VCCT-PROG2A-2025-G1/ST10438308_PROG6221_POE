@@ -1,26 +1,48 @@
-﻿using System;
+﻿//Funi Mapunda
+//ST10438308
+//BCAD2 GR1
+
+//References: 
+//codecademy.com
+//stackoverflow.com
+//chatgpt.com
+//https://medium.com/@thomasmatlockbba/exploring-natural-language-processing-with-c-from-basics-to-advanced-techniques-9114f7da802a
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 
+
 namespace CyberSecurityChatBotWPF
 {
+    // ------------------------Main window class for the Cyber Security Chat Bot application--------------------------//
     public partial class MainWindow : Window
     {
+        // Static reference to the main window instance
         public static MainWindow Instance { get; private set; }
 
-
+        // Instance of the TaskWindow to manage tasks
         private TaskWindow taskWindow;
+
+        // Last added task to allow setting reminders
         private CyberTask lastAddedTask;
 
+        // Activity log to keep track of user interactions
         private List<string> activityLog = new List<string>();
+
+        // Current page for activity log pagination
         private int activityLogPage = 0;
         private const int ActivityLogPageSize = 5;
+
+        // Instance of the chatbot service to handle user interactions
         private ChatbotService chatbotService = new ChatbotService();
+
+        // Flag to check if we are awaiting the username input
         private bool awaitingUsername = true;
 
-
+        //-------------------------CONSTRUCTOR-------------------------`//
         public MainWindow()
         {
             InitializeComponent();
@@ -34,6 +56,9 @@ namespace CyberSecurityChatBotWPF
             Instance = this; // ✅ Set the static reference here
         }
 
+
+        //-------------------------EVENT HANDLERS-------------------------//
+        // Handles the Send button click event
         private async void SendButton_Click(object sender, RoutedEventArgs e)
         {
             string input = UserInputTextBox.Text.Trim();
@@ -96,6 +121,7 @@ namespace CyberSecurityChatBotWPF
         }
 
 
+        // Handles the Task Manager button click event
         private void OpenTaskManager_Click(object sender, RoutedEventArgs e)
         {
             EnsureTaskWindow();
@@ -103,6 +129,7 @@ namespace CyberSecurityChatBotWPF
             BotSay("Task Manager opened.");
         }
 
+        // Handles the Quiz button click event
         private void OpenQuiz_Click(object sender, RoutedEventArgs e)
         {
             QuizWindow quizWindow = new QuizWindow();
@@ -110,6 +137,7 @@ namespace CyberSecurityChatBotWPF
             BotSay("Cybersecurity quiz started.");
         }
 
+        // Handles adding a new task
         private void HandleAddTask(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -128,6 +156,7 @@ namespace CyberSecurityChatBotWPF
             LogActivity("[Topic] Detected conversation topic: Task");
         }
 
+        // Handles quiz completion event
         private void OnQuizCompleted(object? sender, QuizCompletedEventArgs e)
         {
             string message = $"You scored {e.Score}/{e.TotalQuestions} ({Math.Round(e.Percentage)}%).";
@@ -140,6 +169,8 @@ namespace CyberSecurityChatBotWPF
                 LogActivity($"[Quiz] Answered: \"{q}\"");
             }
         }
+
+        // Handles setting a reminder for a task
         private void HandleSetReminder(string text, int? days)
         {
             text = text?.Trim();
@@ -188,7 +219,7 @@ namespace CyberSecurityChatBotWPF
             LogActivity("[Topic] Detected conversation topic: Reminder");
         }
 
-
+        // Shows the activity log, paginated
         private void ShowActivityLog()
         {
             if (activityLog.Count == 0)
@@ -217,34 +248,40 @@ namespace CyberSecurityChatBotWPF
                 BotSay("Type 'show more log' to see more entries.");
         }
 
+        // Logs an activity with a timestamp
         public void LogActivity(string actionDescription)
         {
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             activityLog.Add($"[{timestamp}] {actionDescription}");
         }
 
+        // Shows more activity log entries
         private void ShowMoreActivityLog()
         {
             activityLogPage++;
             ShowActivityLog();
         }
 
+        // Appends a message from the bot to the chat history
         private void BotSay(string message)
         {
             ChatHistoryTextBlock.Text += $"CyberBot: {message}\n\n";
         }
 
+        // Appends a message from the user to the chat history
         private void AppendUser(string input)
         {
             ChatHistoryTextBlock.Text += $"You: {input}\n";
         }
 
+        // Ensures the task window is created and visible
         private void EnsureTaskWindow()
         {
             if (taskWindow == null || !taskWindow.IsVisible)
                 taskWindow = new TaskWindow();
         }
 
+        // Opens the task manager window
         private void OpenTaskManager()
         {
             EnsureTaskWindow();
@@ -252,11 +289,13 @@ namespace CyberSecurityChatBotWPF
             BotSay("Task manager opened.");
         }
 
+        // Opens the quiz window
         private void OpenQuiz_Click()
         {
             new QuizWindow().Show();
         }
 
+        // Enum to represent user intents
         private enum UserIntent
         {
             AddTask,
@@ -267,6 +306,8 @@ namespace CyberSecurityChatBotWPF
             OpenTaskManager,
             Unknown
         }
+
+        // Detects the user's intent based on input text
 
         private (UserIntent, string, int?) DetectUserIntent(string input)
         {
@@ -328,6 +369,7 @@ namespace CyberSecurityChatBotWPF
 
     }
 }
+//-------------------------------------------------------END OF FILE-------------------------------------------------------//
 
 
 

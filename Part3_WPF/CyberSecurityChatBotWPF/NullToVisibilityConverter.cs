@@ -5,8 +5,11 @@ using System.Windows.Data;
 
 namespace CyberSecurityChatBotWPF
 {
+    //class: NullToVisibilityConverter
     public class NullToVisibilityConverter : IValueConverter
     {
+
+        // Converts a null value to Visibility.Collapsed and non-null to Visibility.Visible
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return value != null ? Visibility.Visible : Visibility.Collapsed;
@@ -18,3 +21,4 @@ namespace CyberSecurityChatBotWPF
         }
     }
 }
+//----------------------------------------------------END OF FILE--------------------------------------------------//
