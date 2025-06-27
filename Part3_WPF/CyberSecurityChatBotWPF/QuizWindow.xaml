@@ -1,20 +1,45 @@
 ﻿<Window x:Class="CyberSecurityChatBotWPF.QuizWindow"
-       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Cybersecurity Quiz" Height="400" Width="600">
-    <Grid Margin="10">
-        <StackPanel>
-            <TextBlock x:Name="QuestionTextBlock" Text="Question goes here" FontSize="18" TextWrapping="Wrap" Margin="0,0,0,20"/>
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Cybersecurity Quiz" Height="400" Width="500"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Question Text -->
+            <RowDefinition Height="*"/>
+            <!-- Options -->
+            <RowDefinition Height="Auto"/>
+            <!-- Feedback and Score -->
+            <RowDefinition Height="Auto"/>
+            <!-- Next Button -->
+        </Grid.RowDefinitions>
 
-            <StackPanel x:Name="AnswersPanel" Margin="0,0,0,20">
-                <!-- Answer RadioButtons added dynamically in code-behind -->
-            </StackPanel>
+        <!-- Question Text -->
+        <TextBlock x:Name="QuestionTextBlock" Grid.Row="0"
+                   FontSize="18" FontWeight="Bold" TextWrapping="Wrap"
+                   Margin="0,0,0,15" Text="Quiz Question will appear here."/>
 
-            <Button x:Name="NextButton" Content="Next" Width="100" HorizontalAlignment="Left" Click="NextButton_Click"/>
-
-            <TextBlock x:Name="FeedbackTextBlock" Text="" FontWeight="Bold" Foreground="Green" Margin="0,20,0,0" />
-
-            <TextBlock x:Name="ScoreTextBlock" Text="Score: 0/0" HorizontalAlignment="Right" FontWeight="Bold" Margin="0,20,0,0"/>
+        <!-- Answer Options -->
+        <StackPanel x:Name="AnswersPanel" Grid.Row="1" Margin="0,0,0,15">
+            <!-- RadioButtons for answers will be added here dynamically from code-behind -->
+            <RadioButton Content="Option 1" Margin="0,0,0,5"/>
+            <RadioButton Content="Option 2" Margin="0,0,0,5"/>
+            <RadioButton Content="Option 3" Margin="0,0,0,5"/>
+            <RadioButton Content="Option 4" Margin="0,0,0,5"/>
         </StackPanel>
+
+        <!-- Feedback and Score -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,15">
+            <TextBlock x:Name="FeedbackTextBlock" FontSize="14" FontStyle="Italic" Margin="0,0,0,5"/>
+            <TextBlock x:Name="ScoreTextBlock" FontSize="14" FontWeight="SemiBold" Text="Score: 0/0"/>
+        </StackPanel>
+
+        <!-- Next Button -->
+        <Button x:Name="NextButton" Grid.Row="3" Content="Next Question"
+                Click="NextButton_Click" HorizontalAlignment="Right" Width="120" Height="35"/>
     </Grid>
 </Window>

@@ -1,27 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace CyberSecurityChatBotWPF
 {
-    /// <summary>
-    /// Interaction logic for QuizWindow.xaml
-    /// </summary>
+    public class QuizCompletedEventArgs : EventArgs
+    {
+        public int Score { get; }
+        public int TotalQuestions { get; }
+        public double Percentage => TotalQuestions > 0 ? (double)Score / TotalQuestions * 100 : 0;
+        public List<string> QuestionsAnswered { get; }
+
+        public QuizCompletedEventArgs(int score, int totalQuestions, List<string> questionsAnswered)
+        {
+            Score = score;
+            TotalQuestions = totalQuestions;
+            QuestionsAnswered = questionsAnswered;
+        }
+    }
+
     public partial class QuizWindow : Window
     {
         private List<QuizQuestion> Questions = new();
         private int currentQuestionIndex = 0;
         private int score = 0;
+        private List<string> answeredQuestions = new();
+
+        public static event EventHandler<QuizCompletedEventArgs> QuizCompleted;
 
         public QuizWindow()
         {
@@ -32,88 +39,80 @@ namespace CyberSecurityChatBotWPF
 
         private void LoadQuestions()
         {
-            // At least 10 questions 
-            Questions = new List<QuizQuestion>();
-
-            Questions.Add(new QuizQuestion
+            Questions = new List<QuizQuestion>
             {
-                QuestionText = "What should you do if you receive an email asking for your password?",
-                Options = new List<string> { "Reply with your password", "Delete the email", "Report the email as phishing", "Ignore it" },
-                CorrectAnswerIndex = 2,
-                Explanation = "Correct! Reporting phishing emails helps prevent scams."
-            });
+                new QuizQuestion
+                {
+                    QuestionText = "What should you do if you receive an email asking for your password?",
+                    Options = new() { "Reply with password", "Delete the email", "Report as phishing", "Ignore it" },
+                    CorrectAnswerIndex = 2,
+                    Explanation = "Correct! Reporting phishing emails helps protect others too."
+                },
+                new QuizQuestion
+                {
+                    QuestionText = "True or False: You should use the same password for all your accounts.",
+                    Options = new() { "True", "False" },
+                    CorrectAnswerIndex = 1,
+                    Explanation = "False! Reusing passwords makes all accounts vulnerable."
+                },
+                new QuizQuestion
+                {
+                    QuestionText = "What is the purpose of two-factor authentication (2FA)?",
+                    Options = new() { "Encrypt data", "Extra security layer", "Make passwords longer", "Prevent spam" },
+                    CorrectAnswerIndex = 1,
+                    Explanation = "Correct! 2FA adds an extra step to verify your identity."
+                },
+                new QuizQuestion
+                {
+                    QuestionText = "What is a VPN used for?",
+                    Options = new() { "Hide IP & encrypt traffic", "Speed up internet", "Block ads", "Download faster" },
+                    CorrectAnswerIndex = 0,
+                    Explanation = "Correct! VPNs enhance privacy and protect online activity."
+                },
+                new QuizQuestion
+                {
+                    QuestionText = "Which of these is an example of social engineering?",
+                    Options = new() { "Virus through email", "Tricking you for info", "Firewall blocking", "Location tracking app" },
+                    CorrectAnswerIndex = 1,
+                    Explanation = "Correct! Social engineering manipulates people to gain access."
+                },
 
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "True or False: You should use the same password for all your accounts.",
-                Options = new List<string> { "True", "False" },
-                CorrectAnswerIndex = 1,
-                Explanation = "False! Using unique passwords for each account keeps you safer."
-            });
-
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "What is the purpose of two-factor authentication (2FA)?",
-                Options = new List<string> { "To make passwords longer", "To add an extra layer of security", "To encrypt your data", "To block spam emails" },
-                CorrectAnswerIndex = 1,
-                Explanation = "Correct! 2FA adds an extra layer of security by requiring a second form of verification."
-            });
-
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "What is a VPN used for?",
-                Options = new List<string> { "To speed up your internet", "To hide your IP address and encrypt your traffic", "To block ads", "To download files faster" },
-                CorrectAnswerIndex = 1,
-                Explanation = "Correct! A VPN hides your IP address and encrypts your internet traffic."
-            });
-
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "What is phishing?",
-                Options = new List<string> { "A type of malware", "A method to steal personal information", "A way to speed up your computer", "A type of firewall" },
-                CorrectAnswerIndex = 1,
-                Explanation = "Correct! Phishing is a method used by attackers to trick you into giving them your personal information."
-            });
-
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "What is malware?",
-                Options = new List<string> { "A type of antivirus", "Software designed to harm your computer", "A type of firewall", "A secure way to store passwords" },
-                CorrectAnswerIndex = 1,
-                Explanation = "Correct! Malware is software designed to harm your computer or steal your information."
-            });
-
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "What is the best way to create a strong password?",
-                Options = new List<string> { "Use your name and birthdate", "Use a mix of letters, numbers, and symbols", "Use the same password for all accounts", "Write it down on a sticky note" },
-                CorrectAnswerIndex = 1,
-                Explanation = "Correct! A strong password uses a mix of letters, numbers, and symbols."
-            });
-
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "Which of the following may indicate your device is infected with malware?",
-                Options = new List<string> { "It runs slightly slower", "You see frequent pop-ups", "Your battery lasts longer", "Your screen is brighter" },
-                CorrectAnswerIndex = 1,
-                Explanation = "Correct! Pop-ups and performance issues may indicate malware infection."
-            });
-
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "True or False: A green padlock in the browser means the website is completely safe.",
-                Options = new List<string> { "True", "False" },
-                CorrectAnswerIndex = 1,
-                Explanation = "False! A padlock only means the connection is encrypted — not that the site itself is safe."
-            });
-
-            Questions.Add(new QuizQuestion
-            {
-                QuestionText = "Which of the following is an example of social engineering?",
-                Options = new List<string> { "A virus that spreads through email", "An app that tracks your location", "An attacker tricking you into revealing personal info", "A firewall blocking your traffic" },
-                CorrectAnswerIndex = 2,
-                Explanation = "Correct! Social engineering relies on manipulating people into giving up confidential information."
-            });
+                new QuizQuestion
+    {
+        QuestionText = "What does VPN stand for?",
+        Options = new() { "Virtual Private Network", "Very Personal Network", "Verified Public Network", "Virtual Public Node" },
+        CorrectAnswerIndex = 0,
+        Explanation = "Correct! VPN creates a secure, encrypted connection over the internet."
+    },
+    new QuizQuestion
+    {
+        QuestionText = "What is social engineering in cybersecurity?",
+        Options = new() { "Hacking software", "Manipulating people to reveal info", "A type of firewall", "Encrypting data" },
+        CorrectAnswerIndex = 1,
+        Explanation = "Correct! It’s the art of tricking people to gain confidential information."
+    },
+    new QuizQuestion
+    {
+        QuestionText = "What is the safest way to store passwords?",
+        Options = new() { "Write them down", "Use a password manager", "Use the same password everywhere", "Save in a text file" },
+        CorrectAnswerIndex = 1,
+        Explanation = "Correct! Password managers securely store and generate complex passwords."
+    },
+    new QuizQuestion
+    {
+        QuestionText = "What is ransomware?",
+        Options = new() { "Software that blocks ads", "Malware that locks files until a ransom is paid", "A security update", "A virus that speeds up your PC" },
+        CorrectAnswerIndex = 1,
+        Explanation = "Correct! Ransomware encrypts your data and demands payment for the key."
+    },
+    new QuizQuestion
+    {
+        QuestionText = "Which of the following can help protect against phishing?",
+        Options = new() { "Using two-factor authentication", "Ignoring emails", "Sharing passwords", "Clicking all links" },
+        CorrectAnswerIndex = 0,
+        Explanation = "Correct! 2FA adds security even if your password is compromised."
+    }
+            };
         }
 
         private void DisplayQuestion()
@@ -123,21 +122,20 @@ namespace CyberSecurityChatBotWPF
 
             if (currentQuestionIndex >= Questions.Count)
             {
-                // Quiz finished
-                QuestionTextBlock.Text = $"Quiz completed! Your score: {score}/{Questions.Count}";
+                QuestionTextBlock.Text = $"Quiz complete! Your score: {score}/{Questions.Count}";
                 AnswersPanel.Children.Clear();
                 NextButton.IsEnabled = false;
 
-                string feedback = score > Questions.Count * 0.7
-                    ? "Great job! You're a cybersecurity pro!"
-                    : "Keep learning to stay safe online!";
-                FeedbackTextBlock.Text = feedback;
+                FeedbackTextBlock.Text = score >= Questions.Count * 0.7
+                    ? "🎉 Well done! You're a cybersecurity champion!"
+                    : "🛡 Keep learning to stay secure! Try again soon.";
+
+                QuizCompleted?.Invoke(this, new QuizCompletedEventArgs(score, Questions.Count, answeredQuestions));
                 return;
             }
 
             QuizQuestion q = Questions[currentQuestionIndex];
             QuestionTextBlock.Text = q.QuestionText;
-
             AnswersPanel.Children.Clear();
 
             for (int i = 0; i < q.Options.Count; i++)
@@ -145,7 +143,7 @@ namespace CyberSecurityChatBotWPF
                 RadioButton rb = new RadioButton
                 {
                     Content = q.Options[i],
-                    GroupName = "Answers",
+                    GroupName = "AnswerOptions",
                     Tag = i
                 };
                 AnswersPanel.Children.Add(rb);
@@ -154,33 +152,35 @@ namespace CyberSecurityChatBotWPF
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
         {
-            int? selectedIndex = null;
+            int? selected = null;
             foreach (RadioButton rb in AnswersPanel.Children)
             {
                 if (rb.IsChecked == true)
                 {
-                    selectedIndex = (int)rb.Tag;
+                    selected = (int)rb.Tag;
                     break;
                 }
             }
 
-            if (selectedIndex == null)
+            if (selected == null)
             {
-                MessageBox.Show("Please select an answer before continuing.");
+                MessageBox.Show("Please select an answer.");
                 return;
             }
 
-            QuizQuestion q = Questions[currentQuestionIndex];
-            if (selectedIndex == q.CorrectAnswerIndex)
+            var q = Questions[currentQuestionIndex];
+            answeredQuestions.Add(q.QuestionText);
+
+            if (selected == q.CorrectAnswerIndex)
             {
                 score++;
                 FeedbackTextBlock.Foreground = System.Windows.Media.Brushes.Green;
-                FeedbackTextBlock.Text = "Correct! " + q.Explanation;
+                FeedbackTextBlock.Text = "✅ " + q.Explanation;
             }
             else
             {
                 FeedbackTextBlock.Foreground = System.Windows.Media.Brushes.Red;
-                FeedbackTextBlock.Text = "Incorrect. " + q.Explanation;
+                FeedbackTextBlock.Text = "❌ " + q.Explanation;
             }
 
             currentQuestionIndex++;
@@ -188,11 +188,9 @@ namespace CyberSecurityChatBotWPF
 
             if (currentQuestionIndex < Questions.Count)
             {
-                // Wait 2 seconds then display next question
                 NextButton.IsEnabled = false;
-                var timer = new System.Windows.Threading.DispatcherTimer();
-                timer.Interval = System.TimeSpan.FromSeconds(2);
-                timer.Tick += (s, args) =>
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                timer.Tick += (s, _) =>
                 {
                     timer.Stop();
                     DisplayQuestion();
@@ -202,15 +200,16 @@ namespace CyberSecurityChatBotWPF
             }
             else
             {
-                QuestionTextBlock.Text = $"Quiz completed! Your score: {score}/{Questions.Count}";
-                AnswersPanel.Children.Clear();
-                NextButton.IsEnabled = false;
-
-                string feedback = score > Questions.Count * 0.7
-                    ? "Great job! You're a cybersecurity pro!"
-                    : "Keep learning to stay safe online!";
-                FeedbackTextBlock.Text = feedback;
+                DisplayQuestion(); // Finish quiz
             }
         }
+    }
+
+    public class QuizQuestion
+    {
+        public string QuestionText { get; set; }
+        public List<string> Options { get; set; }
+        public int CorrectAnswerIndex { get; set; }
+        public string Explanation { get; set; }
     }
 }
