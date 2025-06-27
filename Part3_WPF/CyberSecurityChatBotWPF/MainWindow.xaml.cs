@@ -9,20 +9,24 @@ namespace CyberSecurityChatBotWPF
     public partial class MainWindow : Window
     {
         public static MainWindow Instance { get; private set; }
+
+
         private TaskWindow taskWindow;
         private CyberTask lastAddedTask;
 
         private List<string> activityLog = new List<string>();
         private int activityLogPage = 0;
         private const int ActivityLogPageSize = 5;
-
+        private ChatbotService chatbotService = new ChatbotService();
+        private bool awaitingUsername = true;
 
 
         public MainWindow()
         {
             InitializeComponent();
-            BotSay("Welcome to the Cybersecurity ChatBot!");
+            InitializeComponent();
 
+            BotSay(chatbotService.AskUsernamePrompt());
             // Subscribe to quiz event
             QuizWindow.QuizCompleted += OnQuizCompleted;
 
@@ -30,13 +34,21 @@ namespace CyberSecurityChatBotWPF
             Instance = this; // ✅ Set the static reference here
         }
 
-        private void SendButton_Click(object sender, RoutedEventArgs e)
+        private async void SendButton_Click(object sender, RoutedEventArgs e)
         {
             string input = UserInputTextBox.Text.Trim();
-            UserInputTextBox.Clear();
             if (string.IsNullOrWhiteSpace(input)) return;
 
             AppendUser(input);
+            UserInputTextBox.Clear();
+
+            if (awaitingUsername)
+            {
+                string welcomeMsg = chatbotService.SetUsername(input);
+                awaitingUsername = false;
+                BotSay(welcomeMsg);
+                return;
+            }
 
             var (intent, extractedText, days) = DetectUserIntent(input);
 
@@ -69,12 +81,21 @@ namespace CyberSecurityChatBotWPF
                     OpenTaskManager();
                     break;
 
+                case UserIntent.Unknown:
                 default:
-                    BotSay("Sorry, I don't understand that yet. Try asking about tasks, reminders, or quizzes.");
+                    string botResponse = await chatbotService.GetResponseAsync(input);
+                    BotSay(botResponse);
                     break;
             }
+
+            if (input.ToLower() == "exit")
+            {
+                UserInputTextBox.IsEnabled = false;
+                SendButton.IsEnabled = false;
+            }
         }
-        
+
+
         private void OpenTaskManager_Click(object sender, RoutedEventArgs e)
         {
             EnsureTaskWindow();
@@ -123,7 +144,7 @@ namespace CyberSecurityChatBotWPF
         {
             text = text?.Trim();
 
-            // Update last task reminder if no new task text provided
+            // If no new task text but days exist, set reminder on last added task
             if (days.HasValue && string.IsNullOrWhiteSpace(text) && lastAddedTask != null)
             {
                 lastAddedTask.ReminderDate = DateTime.Today.AddDays(days.Value);
@@ -135,14 +156,14 @@ namespace CyberSecurityChatBotWPF
                 return;
             }
 
-            // No text provided to create a new reminder
+            // If no task text, ask for it
             if (string.IsNullOrWhiteSpace(text))
             {
                 BotSay("What should I remind you about?");
                 return;
             }
 
-            // Create new task with optional reminder
+            // Create a new task with optional reminder
             var newTask = new CyberTask
             {
                 Title = text,
@@ -166,6 +187,7 @@ namespace CyberSecurityChatBotWPF
             LogActivity($"[Reminder] Reminder added for \"{text}\"" + (days.HasValue ? $" in {days.Value} days" : ""));
             LogActivity("[Topic] Detected conversation topic: Reminder");
         }
+
 
         private void ShowActivityLog()
         {
@@ -250,16 +272,30 @@ namespace CyberSecurityChatBotWPF
         {
             input = input.ToLower();
 
-            if (input.Contains("task manager")) return (UserIntent.OpenTaskManager, "", null);
-            if (input.Contains("start quiz") || input.Contains("quiz me")) return (UserIntent.StartQuiz, "", null);
-            if (input.Contains("show activity") || input.Contains("what have you done")) return (UserIntent.ShowLog, "", null);
-            if (input.Contains("show more log")) return (UserIntent.ShowMoreLog, "", null);
+            // Open task manager
+            if (input.Contains("task manager"))
+                return (UserIntent.OpenTaskManager, "", null);
 
+            // Start quiz
+            if (input.Contains("start quiz") || input.Contains("quiz me"))
+                return (UserIntent.StartQuiz, "", null);
+
+            // Show activity log
+            if (input.Contains("show activity") || input.Contains("what have you done"))
+                return (UserIntent.ShowLog, "", null);
+
+            if (input.Contains("show more log") || input.Contains("more log"))
+                return (UserIntent.ShowMoreLog, "", null);
+
+            // Add task pattern: "add task [task description]"
             var addMatch = Regex.Match(input, @"(?:add|create)(?: a)? task(?: to)? (.+)");
-            if (addMatch.Success) return (UserIntent.AddTask, addMatch.Groups[1].Value, null);
+            if (addMatch.Success)
+                return (UserIntent.AddTask, addMatch.Groups[1].Value.Trim(), null);
 
+            // Reminder patterns:
             if (input.Contains("remind me") || input.Contains("set a reminder"))
             {
+                // Pattern: remind me to [task] in [N] days
                 var match = Regex.Match(input, @"remind me to (.+?) in (\d+) days");
                 if (match.Success)
                 {
@@ -268,7 +304,7 @@ namespace CyberSecurityChatBotWPF
                     return (UserIntent.SetReminder, taskText, days);
                 }
 
-                // fallback: try to get task only
+                // Pattern: remind me to [task] (without days)
                 var fallback = Regex.Match(input, @"remind me to (.+)");
                 if (fallback.Success)
                 {
@@ -278,27 +314,34 @@ namespace CyberSecurityChatBotWPF
                 return (UserIntent.SetReminder, "", null);
             }
 
+            // "yes, remind me in N days" to confirm setting reminder on last task
             var yesRemind = Regex.Match(input, @"yes.*remind.*in (\d+) days");
             if (yesRemind.Success)
             {
-                int d = int.Parse(yesRemind.Groups[1].Value);
-                return (UserIntent.SetReminder, "", d);
+                int days = int.Parse(yesRemind.Groups[1].Value);
+                return (UserIntent.SetReminder, "", days);
             }
 
-            if (input.Contains("show activity log") || input.Contains("what have you done"))
-            {
-                activityLogPage = 0; // Reset paging
-                ShowActivityLog();
-                return (UserIntent.Unknown, "", null);
-            }
-
-            if (input.Contains("show more log") || input.Contains("more log"))
-            {
-                ShowMoreActivityLog();
-                return (UserIntent.Unknown, "", null);
-            }
-
+            // Default unknown intent
             return (UserIntent.Unknown, "", null);
         }
+
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
